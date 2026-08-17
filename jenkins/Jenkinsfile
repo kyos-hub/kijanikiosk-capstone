@@ -23,11 +23,7 @@ pipeline {
                 '''
             }
         }
-        stage('Deploy to Staging') {
-            when {
-                branch 'main'
-            }
-            steps {
+        stage('Deploy to Staging') {            steps {
                 sh '''
                     export PATH="$WORKSPACE/bin:$PATH"
                     kubectl apply -k k8s/staging
@@ -35,11 +31,7 @@ pipeline {
                 '''
             }
         }
-        stage('Smoke Test — Staging') {
-            when {
-                branch 'main'
-            }
-            steps {
+        stage('Smoke Test — Staging') {            steps {
                 script {
                     sh '''
                         export PATH="$WORKSPACE/bin:$PATH"
@@ -57,11 +49,7 @@ pipeline {
                 }
             }
         }
-        stage('Approval Gate — Production') {
-            when {
-                branch 'main'
-            }
-            steps {
+        stage('Approval Gate — Production') {            steps {
                 script {
                     def approver = input(
                         message: 'Smoke test passed. Approve production deployment?',
@@ -74,11 +62,7 @@ pipeline {
                 }
             }
         }
-        stage('Deploy to Production') {
-            when {
-                branch 'main'
-            }
-            steps {
+        stage('Deploy to Production') {            steps {
                 sh '''
                     export PATH="$WORKSPACE/bin:$PATH"
                     kubectl apply -k k8s/production
