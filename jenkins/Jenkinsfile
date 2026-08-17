@@ -1,32 +1,40 @@
 pipeline {
     agent any
-
     environment {
         STAGING_NAMESPACE = 'kijani-staging'
         PROD_NAMESPACE    = 'default'
-        KUBECONFIG        = credentials('minikube-kubeconfig') // set this up in Jenkins credentials
     }
-
     stages {
-
         stage('Checkout') {
             steps {
                 checkout scm
             }
         }
-
+        stage('Tools Setup') {
+            steps {
+                sh '''
+                    if ! command -v kubectl >/dev/null 2>&1; then
+                        echo "kubectl not found — installing to workspace..."
+                        curl -sLO "https://dl.k8s.io/release/$(curl -sL https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+                        chmod +x kubectl
+                        mkdir -p bin
+                        mv kubectl bin/
+                    fi
+                '''
+            }
+        }
         stage('Deploy to Staging') {
             when {
                 branch 'main'
             }
             steps {
                 sh '''
+                    export PATH="$WORKSPACE/bin:$PATH"
                     kubectl apply -k k8s/staging
                     kubectl rollout status deployment/kk-payments -n ${STAGING_NAMESPACE} --timeout=120s
                 '''
             }
         }
-
         stage('Smoke Test — Staging') {
             when {
                 branch 'main'
@@ -34,14 +42,12 @@ pipeline {
             steps {
                 script {
                     sh '''
+                        export PATH="$WORKSPACE/bin:$PATH"
                         kubectl port-forward -n ${STAGING_NAMESPACE} svc/kk-payments 8081:80 &
                         PF_PID=$!
                         sleep 5
-
                         STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8081/healthz || echo "000")
-
                         kill $PF_PID || true
-
                         if [ "$STATUS" != "200" ]; then
                             echo "Smoke test FAILED — staging healthz returned $STATUS"
                             exit 1
@@ -51,14 +57,12 @@ pipeline {
                 }
             }
         }
-
         stage('Approval Gate — Production') {
             when {
                 branch 'main'
             }
             steps {
                 script {
-                    // Only reached if the smoke test stage passed.
                     def approver = input(
                         message: 'Smoke test passed. Approve production deployment?',
                         submitterParameter: 'APPROVER',
@@ -70,20 +74,19 @@ pipeline {
                 }
             }
         }
-
         stage('Deploy to Production') {
             when {
                 branch 'main'
             }
             steps {
                 sh '''
+                    export PATH="$WORKSPACE/bin:$PATH"
                     kubectl apply -k k8s/production
                     kubectl rollout status deployment/kk-payments -n ${PROD_NAMESPACE} --timeout=120s
                 '''
             }
         }
     }
-
     post {
         failure {
             echo 'Pipeline failed — production gate was never reached, or a stage errored.'

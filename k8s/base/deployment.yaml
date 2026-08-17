@@ -16,8 +16,11 @@ spec:
     spec:
       containers:
         - name: kk-payments
-          # Replace with your actual image and tag/registry.
-          image: kk-payments:latest
+          # PLACEHOLDER - swap for real kk-payments image later
+          image: hashicorp/http-echo:latest
+          args:
+            - "-text=kk-payments placeholder OK"
+            - "-listen=:8080"
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8080

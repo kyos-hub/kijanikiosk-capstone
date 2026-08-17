@@ -1,0 +1,28 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: kk-payments-alerts
+  namespace: monitoring
+  labels:
+    release: kube-prometheus-stack
+spec:
+  groups:
+    - name: kk-payments.rules
+      rules:
+        - alert: KkPaymentsHighRestartRate
+          expr: |
+            increase(kube_pod_container_status_restarts_total{
+              namespace=~"kijani-staging|default",
+              container="kk-payments"
+            }[15m]) > 3
+          for: 5m
+          labels:
+            severity: warning
+            service: kk-payments
+          annotations:
+            summary: "kk-payments pod restarting frequently ({{ $labels.namespace }})"
+            description: >
+              Container kk-payments in namespace {{ $labels.namespace }}
+              has restarted more than 3 times in the last 15 minutes
+              (pod: {{ $labels.pod }}). This may indicate crash-looping,
+              OOMKills, or failing health checks.
