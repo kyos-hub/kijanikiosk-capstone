@@ -1,0 +1,53 @@
+# PrometheusRule custom resource — assumes the kube-prometheus-stack Helm chart
+# (or equivalent Prometheus Operator setup) is running in the cluster and watching
+# for PrometheusRule resources labeled release: <your-prometheus-release-name>.
+#
+# If you're running plain Prometheus without the Operator, adapt the `groups:`
+# block below into your prometheus.yml rule_files config instead.
+
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: kk-payments-alerts
+  namespace: kijani-staging
+  labels:
+    release: prometheus
+spec:
+  groups:
+    - name: kk-payments.rules
+      rules:
+        - alert: KkPaymentsPodRestartingTooOften
+          expr: |
+            increase(kube_pod_container_status_restarts_total{
+              namespace="kijani-staging",
+              pod=~"kk-payments-.*"
+            }[15m]) > 3
+          for: 5m
+          labels:
+            severity: warning
+            service: kk-payments
+          annotations:
+            summary: "kk-payments pod restarting frequently in staging"
+            description: >-
+              Pod {{ $labels.pod }} in namespace {{ $labels.namespace }} has restarted
+              more than 3 times in the last 15 minutes. This usually indicates a crash
+              loop, failing readiness/liveness probe, or resource limit being hit.
+
+        - alert: KkPaymentsHighErrorRate
+          expr: |
+            (
+              sum(rate(http_requests_total{app="kk-payments", status=~"5.."}[5m]))
+              /
+              sum(rate(http_requests_total{app="kk-payments"}[5m]))
+            ) > 0.05
+          for: 5m
+          labels:
+            severity: critical
+            service: kk-payments
+          annotations:
+            summary: "kk-payments error rate above 5%"
+            description: >-
+              More than 5% of requests to kk-payments have returned a 5xx status
+              over the last 5 minutes. Note: this rule requires the app to expose
+              http_requests_total with a status label — adjust the metric name to
+              match your actual instrumentation.

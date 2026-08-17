@@ -1,0 +1,6 @@
+# Copy this file to terraform.tfvars and adjust if needed.
+# terraform.tfvars is gitignored — never commit real values if this expands
+# to include secrets later.
+
+staging_namespace = "kijani-staging"
+environment_label  = "staging"
