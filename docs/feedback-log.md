@@ -56,3 +56,80 @@ setup steps, and the two deliberate scope exclusions with reasons.
 - Evidence: commit 1047270, "docs(readme): rewrite to reflect actual system
   state and known gaps". Before/after comparison: `git show
   b0a1660:README.md` (old) vs current `README.md` on `main`.
+
+## Self-Review — Alan Kiptoo, 2026-08-18
+
+Conducted as a critical fresh-eyes pass over the repository, README, and
+
+Jenkinsfile, checking claims made in the scope document and slide deck
+
+against what's actually verifiable in the repo right now.
+
+### Issue 1: README never validated against a clean checkout
+
+- **Severity**: Medium
+
+- **Finding**: The README documents Helm installs, Jenkins RBAC setup, and
+
+  pipeline job configuration in detail, but has never actually been
+
+  followed start-to-finish on a truly fresh environment. Given that today's
+
+  build required manually installing Terraform and the AWS CLI, and
+
+  recovering from a post-restart kubelet race condition, there's a real
+
+  chance a new engineer hits an undocumented snag.
+
+- **Resolution**: Documented here as a known gap. Full re-validation on a
+
+  clean Codespace is the next concrete step before treating the README as
+
+  fully reliable.
+
+### Issue 2: Terraform and AWS CLI are undocumented prerequisites
+
+- **Severity**: Medium
+
+- **Finding**: `grep`-ing the README for install/prerequisite steps shows
+
+  Helm, kubectl, and Jenkins setup documented, but no mention of installing
+
+  Terraform or the AWS CLI — both of which were required and had to be
+
+  installed manually mid-session today.
+
+- **Resolution**: Add a "Prerequisites" section to the README listing
+
+  Terraform, AWS CLI, kubectl, Helm, and minikube as required tools before
+
+  any setup steps.
+
+### Issue 3: Build #5's failure cause was asserted but never verified
+
+- **Severity**: Low
+
+- **Finding**: The slide deck and reflection reference build #5 as a real,
+
+  recorded pipeline failure that demonstrates the smoke test correctly
+
+  blocking bad deploys. The actual console output for that build was never
+
+  pulled or confirmed — the claim rests on the Jenkins build list showing a
+
+  red "X," not on a verified root cause. Attempting to fetch the real
+
+  console log during this review found Jenkins not currently reachable at
+
+  the expected local port.
+
+- **Resolution**: Before presentation day, re-forward Jenkins locally and
+
+  pull the actual console log for build #5 to confirm it failed at the
+
+  smoke test stage specifically (versus, for example, the branch-guard bug
+
+  that was separately fixed). Update the slide/reflection claim if the
+
+  actual cause differs.
+
