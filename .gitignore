@@ -1,6 +1,5 @@
-terraform/.terraform/
-terraform/terraform.tfstate
-terraform/terraform.tfstate.backup
+aws/
+awscliv2.zip
 terraform/.terraform.lock.hcl
 terraform/.terraform/
 terraform/terraform.tfstate
