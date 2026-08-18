@@ -49,3 +49,7 @@ To demonstrate a failing smoke test / fault-handling path: temporarily break the
 - The Jenkins Helm chart's build agents run as system:serviceaccount:jenkins:default, not the Jenkins controller's own jenkins ServiceAccount. RBAC must target default in the jenkins namespace — confirmed via a Forbidden error during the first real pipeline run.
 - kubectl port-forward requires the pods/portforward subresource explicitly. It is not covered by pods alone.
 - when { branch 'main' } guards only evaluate correctly in a Multibranch Pipeline job, where BRANCH_NAME is set. A plain single-branch Pipeline job never sets it, so those guards silently skip every stage even though the build reports SUCCESS.
+
+## Pipeline Demo
+
+[Watch the recorded pipeline run](https://drive.google.com/file/d/1Fff12DKHd3k9Qb0CkWEp7rXxMvp6gwYA/view?usp=sharing) — staging deploy → smoke test → approval gate → production deploy, including a real earlier build failure (#5) and the successful run (#9) with a typed approval reason.
